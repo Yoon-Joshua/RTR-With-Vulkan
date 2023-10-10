@@ -1,0 +1,10 @@
+# Visual Studio
+
+*.vcxproj
+*.filters
+*.user
+*.TMP
+x64/
+
+# SPIRV
+**.spv
