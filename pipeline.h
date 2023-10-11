@@ -8,7 +8,7 @@ class Pipeline {
 public:
 	VkPipeline handle;
 	VkPipelineLayout layout;
-	std::vector<std::vector<VkDescriptorSet>> descriptorSets;
+	std::vector<std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>> descriptorSets;
 
 	Context* context{ nullptr };
 

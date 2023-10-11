@@ -1,15 +1,14 @@
 #pragma once
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <array>
 #include <vector>
 #include <string>
 #include <memory>
 #include <unordered_map>
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
-
 #include "buffer.h"
 
 struct Vertex {

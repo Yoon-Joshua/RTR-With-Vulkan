@@ -2,6 +2,13 @@
 
 std::fstream Context::output;
 
+double Context::last_mx = 0;
+double Context::last_my = 0;
+double Context::cur_mx = 0;
+double Context::cur_my = 0;
+bool Context::arcball_on = false;
+double Context::fovy = 45;
+
 Context::Context() {
 	output.open("E:/log.txt", std::ios::out);
 

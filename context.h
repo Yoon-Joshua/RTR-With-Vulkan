@@ -5,11 +5,14 @@
 #include <set>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 
 #define WIDTH 1600
 #define HEIGHT 1200
+
+#define MAX_FRAMES_IN_FLIGHT 2
 
 class Context
 {
@@ -36,6 +39,7 @@ private:
 	void createCommandPool();
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+
 	static VKAPI_ATTR VkBool32 VKAPI_CALL
 		debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -74,5 +78,8 @@ public:
 	VkCommandPool commandPool{ VK_NULL_HANDLE };
 
 	static std::fstream output;
+	static double last_mx, last_my, cur_mx, cur_my;
+	static double fovy;
+	static bool arcball_on;
 };
 

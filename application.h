@@ -15,6 +15,8 @@
 #include "pipeline.h"
 #include "texture.h"
 #include "timer.h"
+#include "camera.h"
+#include "arcball.h"
 
 struct MVP {
 	alignas(16) glm::mat4 model;
@@ -59,6 +61,8 @@ private:
 	/************************************************/
 
 	Context context;
+	Camera camera;
+	ArcBall arcball;
 	Scene scene;
 	SwapChain swapchain;
 	Image depthImage;
@@ -74,7 +78,7 @@ private:
 	Pipeline pipelineShadow;
 
 	CommandBuffer commandBuffer;
-	uint32_t MAX_FRAMES_IN_FLIGHT{ 1 };
+	//uint32_t MAX_FRAMES_IN_FLIGHT{ 1 };
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;

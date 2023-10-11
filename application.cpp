@@ -1,14 +1,16 @@
 #include "Application.h"
 #include "common.h"
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 std::string TEXTURE_PATH = "E:/model/marry/MC003_Kozakura_Mari.png";
+
+unsigned count = 0;
 
 void Application::init() {
 	context.create();
+	arcball.init(context.window);
 
 	swapchain.create(&context);
-	MAX_FRAMES_IN_FLIGHT = swapchain.getNumImages();
-	//MAX_FRAMES_IN_FLIGHT = 2;
+
+	camera.setAspect((float)swapchain.width() / (float)swapchain.height());
 
 	std::vector<VkFormat> candidates = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
 	VkFormatFeatureFlagBits features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -291,6 +293,7 @@ void Application::resizeWindow() {
 	swapchain.recreateSwapChain();
 	uint32_t w = swapchain.width();
 	uint32_t h = swapchain.height();
+	camera.setAspect((float)w / (float)h);
 	depthImage.resize(w, h);
 	colorImage.resize(w, h);
 	renderpass.destroyFramebuffers();
@@ -298,23 +301,22 @@ void Application::resizeWindow() {
 }
 
 void Application::updateUniformBuffers(size_t index) {
-	cameraMVP.model = glm::mat4(1.0);
-	cameraMVP.view = glm::lookAt(glm::vec3(3.0, 5.0, 3.0), glm::vec3(0.0, 2.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	float w = swapchain.width();
-	float h = swapchain.height();
-	cameraMVP.proj = glm::perspective(glm::radians(65.0f), w / h, 3.0f, 100.0f);
-	cameraMVP.proj[1][1] *= -1;
+	camera.setFovy(ArcBall::scroll_factor);
+	//cameraMVP.model = glm::mat4(1.0);
+	cameraMVP.model = arcball.get();
+	cameraMVP.view = camera.lookAt();
+	cameraMVP.proj = camera.perspective();
 	cameraBuffer[index].upload(&cameraMVP, false);
 
 	lightInfo.pos = glm::vec4(8.0f, 8.0f, -8.0f, 1.0f);
 	lightInfo.intensity = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	lightInfoBuffer[index].upload(&lightInfo, false);
 
+	float w = swapchain.width();
+	float h = swapchain.height();
 	lightMVP.model = glm::mat4(1.0);
 	lightMVP.view = glm::lookAt(lightInfo.pos, glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 	lightMVP.proj = glm::perspective(glm::radians(45.0f), w / h, 7.0f, 20.0f);
-	//lightMVP.view = glm::lookAt(glm::vec3(3.0, 5.0, 3.0), glm::vec3(0.0, 2.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	//lightMVP.proj = glm::perspective(glm::radians(65.0f), w / h, 3.0f, 100.0f);
 	lightMVP.proj[1][1] *= -1;
 	lightBuffer[index].upload(&lightMVP, false);
 }
