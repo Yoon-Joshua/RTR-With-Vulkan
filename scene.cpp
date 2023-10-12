@@ -79,7 +79,7 @@ void Scene::loadModel(Context* context) {
 	/**********************************************************************/
 	Vertex v[4];
 	uint32_t index[4];
-	float side = 10;
+	float side = 27.924055;
 	v[0].pos = glm::vec3(side, ymin, side); 
 	v[0].normal = glm::vec3(0.0, 1.0, 0.0);
 	v[1].pos = glm::vec3(side, ymin, -side);

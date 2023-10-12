@@ -7,7 +7,7 @@
 #include <fstream>
 #include <algorithm>
 #include <vulkan/vulkan.h>
-#include <GLFW/glfw3.h>
+#include "glfw_context.h"
 
 #define WIDTH 1600
 #define HEIGHT 1200
@@ -19,13 +19,13 @@ class Context
 public:
 	Context();
 	~Context();
-	void create();
+	void create(GlfwContext* gc);
 	void destroy();
 	VkInstance getInstance()const;
 	VkPhysicalDevice getPhysicalDevice()const;
 	VkDevice getDevice()const;
 	VkSurfaceKHR getSurface()const;
-	GLFWwindow* getWindow()const;
+	//GLFWwindow* getWindow()const;
 	VkCommandPool getCommandPool()const;
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -33,12 +33,12 @@ public:
 private:
 	void createInstance();
 	void setupDebugMessenger();
-	void createSurface();
+	void createSurface(GLFWwindow* window);
 	void pickPhysicalDevice();
 	void createLogicalDevice();
 	void createCommandPool();
 
-	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+	//static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL
 		debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -46,8 +46,6 @@ private:
 			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 			void* pUserData);
 public:
-	GLFWwindow *window{ nullptr };
-	bool framebufferResized{ false };
 
 	VkDebugUtilsMessengerEXT debugMessenger;
 
@@ -78,8 +76,5 @@ public:
 	VkCommandPool commandPool{ VK_NULL_HANDLE };
 
 	static std::fstream output;
-	static double last_mx, last_my, cur_mx, cur_my;
-	static double fovy;
-	static bool arcball_on;
 };
 

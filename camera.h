@@ -13,6 +13,7 @@ public:
 	mat4 perspective();
 	void setFovy(float f);
 	void setAspect(float a);
+	void setPosition(float p);
 
 private:
 	float fovy;

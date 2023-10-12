@@ -2,7 +2,7 @@
 
 layout(location = 0) out vec4 outColor;
 
-layout(location = 0) in vec4 pos;
+layout(location = 0) in vec4 inPosition;
 
 vec4 pack (float depth) {
     // 使用rgba 4字节共32位来存储z值,1个字节精度为1/256
@@ -15,5 +15,5 @@ vec4 pack (float depth) {
 }
 
 void main(){
-    outColor = vec4(pos.zzz / pos.w, 1.0);
+    outColor = vec4(inPosition.zzz / inPosition.w, 1.0);
 }

@@ -6,9 +6,9 @@
 #include <algorithm>
 #include <stdexcept>
 #include <vulkan/vulkan.h>
-#include <GLFW/glfw3.h>
 #include "context.h"
 #include "image.h"
+#include "glfw_context.h"
 
 class SwapChain {
 public:
@@ -18,7 +18,7 @@ public:
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	void create(Context* context_);
+	void create(Context* context_, GlfwContext* glfwContext_);
 	void destroy();
 
 	VkFormat getFormat()const;
@@ -33,7 +33,8 @@ public:
 	void recreateSwapChain();
 
 private:
-	Context* context;
+	GlfwContext* glfwContext{ nullptr };
+	Context* context{ nullptr };
 	/***************************************************************/
 	VkSwapchainKHR handle{ VK_NULL_HANDLE };
 	std::vector<VkImage> images;
@@ -44,7 +45,7 @@ private:
 
 	SwapChainSupportDetails querySwapChainSupport();
 
-	void createSwapChain();
+	void createSwapChain(GlfwContext* );
 
 	void createImageViews();
 

@@ -1,8 +1,8 @@
 #include "SwapChain.h"
 
-void SwapChain::create(Context* context_) {
+void SwapChain::create(Context* context_, GlfwContext* glfwContext_) {
 	context = context_;
-	createSwapChain();
+	createSwapChain(glfwContext_);
 	createImageViews();
 }
 
@@ -63,7 +63,7 @@ SwapChain::SwapChainSupportDetails SwapChain::querySwapChainSupport() {
 	return details;
 }
 
-void SwapChain::createSwapChain() {
+void SwapChain::createSwapChain(GlfwContext* glfwContext) {
 	auto supports = querySwapChainSupport();
 	// select format
 	VkSurfaceFormatKHR surfaceFormat;
@@ -98,7 +98,7 @@ void SwapChain::createSwapChain() {
 	}
 	else {
 		int width, height;
-		glfwGetFramebufferSize(context->window, &width, &height);
+		glfwGetFramebufferSize(glfwContext->window, &width, &height);
 		VkExtent2D actualExtent = { static_cast<uint32_t>(width),
 								   static_cast<uint32_t>(height) };
 		actualExtent.width = std::clamp(actualExtent.width,
@@ -173,6 +173,6 @@ void SwapChain::cleanupSwapChain() {
 
 void SwapChain::recreateSwapChain() {
 	cleanupSwapChain();
-	createSwapChain();
+	createSwapChain(glfwContext);
 	createImageViews();
 }

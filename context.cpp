@@ -2,17 +2,10 @@
 
 std::fstream Context::output;
 
-double Context::last_mx = 0;
-double Context::last_my = 0;
-double Context::cur_mx = 0;
-double Context::cur_my = 0;
-bool Context::arcball_on = false;
-double Context::fovy = 45;
-
 Context::Context() {
 	output.open("E:/log.txt", std::ios::out);
 
-	glfwInit();
+	//glfwInit();
 
 #ifdef _DEBUG
 	enableValidationLayers = true;
@@ -20,29 +13,28 @@ Context::Context() {
 
 	validationLayers.push_back("VK_LAYER_KHRONOS_validation");
 
-	uint32_t glfwExtensionCount = 0;
-	const char **glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-	std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+	//uint32_t glfwExtensionCount = 0;
+	//const char **glfwExtensions;
+	//glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	//std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 	if (enableValidationLayers) {
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
-	instanceExtensions = extensions;
 
 	deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 }
 
 Context::~Context() { output.close(); }
 
-void Context::create(){
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-	glfwSetWindowUserPointer(window, this);
-	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-
+void Context::create(GlfwContext* glfwContext){
+	//glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	//window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	//glfwSetWindowUserPointer(window, this);
+	//glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+	instanceExtensions.insert(instanceExtensions.end(), glfwContext->glfwExtensions.begin(), glfwContext->glfwExtensions.end());
 	createInstance();
 	setupDebugMessenger();
-	createSurface();
+	createSurface(glfwContext->window);
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createCommandPool();
@@ -66,7 +58,7 @@ VkInstance Context::getInstance()const { return instance; }
 VkPhysicalDevice Context::getPhysicalDevice()const { return gpu; }
 VkDevice Context::getDevice()const { return device; }
 VkSurfaceKHR Context::getSurface()const { return surface; }
-GLFWwindow* Context::getWindow()const { return window; }
+//GLFWwindow* Context::getWindow()const { return window; }
 VkCommandPool Context::getCommandPool()const { return commandPool; }
 
 uint32_t Context::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
@@ -169,7 +161,7 @@ void Context::setupDebugMessenger() {
 	}
 }
 
-void Context::createSurface() {
+void Context::createSurface(GLFWwindow* window) {
 	VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create window surface!");
@@ -309,10 +301,10 @@ void Context::createCommandPool() {
 	}
 }
 
-void Context::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-	auto app = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
-	app->framebufferResized = true;
-}
+//void Context::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+//	auto app = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
+//	app->framebufferResized = true;
+//}
 
 VkBool32 Context::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,

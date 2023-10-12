@@ -17,6 +17,7 @@
 #include "timer.h"
 #include "camera.h"
 #include "arcball.h"
+#include "glfw_context.h"
 
 struct MVP {
 	alignas(16) glm::mat4 model;
@@ -32,7 +33,7 @@ struct LightInfo {
 /// @note Swapchain and Surface are necessary.
 class Application {
 public:
-	void init();
+	void init(GlfwContext* glfwContext_);
 	void mainLoop(Timer& timer);
 	void cleanup();
 
@@ -42,24 +43,20 @@ private:
 	void createSyncObjects();
 	void resizeWindow();
 
-	void updateUniformBuffers(size_t index);
-
+	void updateUniformObjects(size_t index);
 	/************************************************/
 	void createDescriptorPool();
 
-	//void createDescriptorSetLayout();
-	//void createDescriptorSetLayoutNoTexture();
 	void createDescriptorSetLayoutPhong();
 	void createDescriptorSetLayoutTexture();
 	void createDescriptorSetLayoutMVP();
 
-	//void createDescriptorSets();
-	//void createDescriptorSetsNoTexture();
 	void createDescriptorSetsPhong();
 	void createDescriptorSetsTexture();
 	void createDescriptorSetsMVP();
 	/************************************************/
 
+	GlfwContext* glfwContext{ nullptr };
 	Context context;
 	Camera camera;
 	ArcBall arcball;
@@ -68,8 +65,8 @@ private:
 	Image depthImage;
 	Image colorImage;
 	Texture texture;
-	//Image shadowDepthImage;
-	//Image shadowColorImage;
+	Image shadowDepth;
+	Image shadowColor;
 	Texture shadowmap;
 
 	VkFormat depthFormat;
@@ -92,15 +89,27 @@ private:
 	VkDescriptorSetLayout descriptorSetLayoutTexture;
 	VkDescriptorSetLayout descriptorSetLayoutMVP;
 
-	std::vector<VkDescriptorSet> descriptorSetPhong;
+	std::vector<VkDescriptorSet> descriptorSetObj1;
+	std::vector<VkDescriptorSet> descriptorSetObj2;
+	std::vector<VkDescriptorSet> descriptorSetFloor;
 	std::vector<VkDescriptorSet> descriptorSetTexture;
-	std::vector<VkDescriptorSet> descriptorSetMVP;
+	std::vector<VkDescriptorSet> descriptorSetObj1FromLight;
+	std::vector<VkDescriptorSet> descriptorSetObj2FromLight;
+	std::vector<VkDescriptorSet> descriptorSetFloorFromLight;
 
-	std::vector<Buffer> cameraBuffer;
-	std::vector<Buffer> lightBuffer;
 	std::vector<Buffer> lightInfoBuffer;
-	MVP cameraMVP;
-	MVP lightMVP;
+	std::vector<Buffer> obj1Buffer;
+	std::vector<Buffer> obj2Buffer;
+	std::vector<Buffer> floorBuffer;
+	std::vector<Buffer> obj1FromLightBuffer;
+	std::vector<Buffer> obj2FromLightBuffer;
+	std::vector<Buffer> floorFromLightBuffer;
+	MVP obj1;
+	MVP obj2;
+	MVP floor;
+	MVP obj1FromLight;
+	MVP obj2FromLight;
+	MVP floorFromLight;
 	LightInfo lightInfo;
 };
 
@@ -111,5 +120,6 @@ private:
 * semaphore
 * fence
 * descriptor set
+* 
 */
 

@@ -8,7 +8,7 @@ double ArcBall::cur_my = 0;
 double ArcBall::last_mx = 0;
 double ArcBall::last_my = 0;
 bool ArcBall::arcball_on = false;
-float ArcBall::scroll_factor = 45;
+float ArcBall::scroll_factor = 75;
 vec3 ArcBall::last_point = vec3(0.0, 0.0, 0.0);
 mat4 ArcBall::old = mat4(1.0);
 
@@ -93,5 +93,5 @@ void ArcBall::cursor_position_callback(GLFWwindow* window, double xpos, double y
 
 void ArcBall::scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	scroll_factor += yoffset;
-	scroll_factor = std::clamp(scroll_factor, 10.0f, 80.0f);
+	scroll_factor = std::clamp(scroll_factor, 0.1f, 1500000.0f);
 }
