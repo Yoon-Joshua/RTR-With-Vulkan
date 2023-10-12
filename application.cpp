@@ -37,20 +37,13 @@ void Application::init() {
 
 	depthImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-	shadowDepthImage.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT,
-		1, context.msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-	shadowColorImage.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT,
-		1, context.msaaSamples, swapchain.getFormat(), VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-	shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+	shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 	
 	renderpass.create(&context, swapchain.getFormat(), depthFormat, context.msaaSamples);
 	renderpass.createFramebuffers(swapchain, colorImage, depthImage, swapchain.width(), swapchain.height());
 
-	shadowpass.create(&context, swapchain.getFormat(), depthFormat, context.msaaSamples);
-	shadowpass.createFramebuffers(shadowmap.image, shadowColorImage, shadowDepthImage, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
-	//shadowpass.createFramebuffers(swapchain, shadowColorImage, shadowDepthImage, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+	shadowpass.create(&context, VK_FORMAT_D16_UNORM);
+	shadowpass.createFramebuffers(shadowmap.image, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
 	
 	cameraBuffer.resize(MAX_FRAMES_IN_FLIGHT);
 	lightBuffer.resize(MAX_FRAMES_IN_FLIGHT);
@@ -112,8 +105,6 @@ void Application::cleanup() {
 	colorImage.destroy();
 	depthImage.destroy();
 	texture.destroy();
-	shadowColorImage.destroy();
-	shadowDepthImage.destroy();
 	shadowmap.destroy();
 	renderpass.destroy();
 	shadowpass.destroy();
@@ -147,7 +138,6 @@ void Application::record(uint32_t imageIndex) {
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = shadowpass.handle;
 	renderPassInfo.framebuffer = shadowpass.getFramebuffer(0);
-	//renderPassInfo.framebuffer = shadowpass.getFramebuffer(imageIndex);
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent.width = SHADOW_MAP_WIDTH;
 	renderPassInfo.renderArea.extent.height = SHADOW_MAP_HEIGHT;
@@ -184,11 +174,11 @@ void Application::record(uint32_t imageIndex) {
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.image = shadowmap.image.handle;
-	barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = 1;
 	barrier.subresourceRange.baseArrayLayer = 0;
@@ -245,7 +235,6 @@ void Application::drawFrame() {
 	std::vector<VkDescriptorSet> sets = { descriptorSetMVP[currentFrame], descriptorSetPhong[currentFrame],
 										descriptorSetTexture[currentFrame],descriptorSetPhong[currentFrame] };
 
-	//commandBuffer.record(currentFrame, imageIndex, shadowpass, pipelines, sets, swapchain.getExtent(), scene);
 	record(imageIndex);
 
 	commandBuffer.submit(currentFrame, imageAvailableSemaphores[currentFrame], renderFinishedSemaphores[currentFrame], inFlightFences[currentFrame]);
@@ -302,7 +291,6 @@ void Application::resizeWindow() {
 
 void Application::updateUniformBuffers(size_t index) {
 	camera.setFovy(ArcBall::scroll_factor);
-	//cameraMVP.model = glm::mat4(1.0);
 	cameraMVP.model = arcball.get();
 	cameraMVP.view = camera.lookAt();
 	cameraMVP.proj = camera.perspective();
@@ -381,11 +369,6 @@ void Application::createDescriptorSetLayoutTexture() {
 	bindings[0].descriptorCount = 1;
 	bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	bindings[0].pImmutableSamplers = nullptr;  // Optional
-	//bindings[1].binding = 1;
-	//bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//bindings[1].descriptorCount = 1;
-	//bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	//bindings[1].pImmutableSamplers = nullptr;
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -498,9 +481,6 @@ void Application::createDescriptorSetsTexture() {
 		imageInfo[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo[0].imageView = texture.image.view;
 		imageInfo[0].sampler = texture.sampler;
-		//imageInfo[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		//imageInfo[1].imageView = shadowmap.image.view;
-		//imageInfo[1].sampler = shadowmap.sampler;
 
 		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -510,13 +490,6 @@ void Application::createDescriptorSetsTexture() {
 		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		descriptorWrites[0].descriptorCount = 1;
 		descriptorWrites[0].pImageInfo = &imageInfo[0];
-		//descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		//descriptorWrites[1].dstSet = descriptorSetTexture[i];
-		//descriptorWrites[1].dstBinding = 1;
-		//descriptorWrites[1].dstArrayElement = 0;
-		//descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		//descriptorWrites[1].descriptorCount = 1;
-		//descriptorWrites[1].pImageInfo = &imageInfo[1];
 		vkUpdateDescriptorSets(context.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 }

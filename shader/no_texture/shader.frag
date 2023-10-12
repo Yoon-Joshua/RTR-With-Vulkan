@@ -30,7 +30,7 @@ void main(){
 	vec2 texCoord = vec2(smc.s, smc.t);
 	vec4 smValue = texture(smSampler, texCoord);
 
-	if(smValue.z + 0.1 < z && smc.x <= 1.0 && smc.x >= 0.0 && smc.y >= 0.0 && smc.y <= 1.0){
+	if(smValue.x + 0.1 < z && smc.x <= 0.9 && smc.x >= 0.1 && smc.y >= 0.1 && smc.y <= 0.9){
 		albedo = 0.1;
 	}
 

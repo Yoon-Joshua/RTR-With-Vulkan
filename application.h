@@ -68,8 +68,8 @@ private:
 	Image depthImage;
 	Image colorImage;
 	Texture texture;
-	Image shadowDepthImage;
-	Image shadowColorImage;
+	//Image shadowDepthImage;
+	//Image shadowColorImage;
 	Texture shadowmap;
 
 	VkFormat depthFormat;
@@ -78,7 +78,6 @@ private:
 	Pipeline pipelineShadow;
 
 	CommandBuffer commandBuffer;
-	//uint32_t MAX_FRAMES_IN_FLIGHT{ 1 };
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
