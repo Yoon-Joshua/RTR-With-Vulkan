@@ -37,24 +37,24 @@ void Application::init(GlfwContext* glfwContext_) {
 
 	depthImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-	shadowDepth.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT,
+	/*shadowDepth.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT,
 		1, context.msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 	shadowColor.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT,
 		1, context.msaaSamples, swapchain.getFormat(), VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);*/
 
-	//shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-	shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+	shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+	//shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
 	
 	renderpass.create(&context, swapchain.getFormat(), depthFormat, context.msaaSamples);
 	renderpass.createFramebuffers(swapchain, colorImage, depthImage, swapchain.width(), swapchain.height());
 
-	//shadowpass.create(&context, VK_FORMAT_D16_UNORM);
-	//shadowpass.createFramebuffers(shadowmap.image, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
-	shadowpass.create(&context, swapchain.getFormat(), depthFormat, context.msaaSamples);
-	shadowpass.createFramebuffers(swapchain, shadowColor, shadowDepth, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+	shadowpass.create(&context, VK_FORMAT_D16_UNORM);
+	shadowpass.createFramebuffers(shadowmap.image, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+	//shadowpass.create(&context, swapchain.getFormat(), depthFormat, context.msaaSamples);
+	//shadowpass.createFramebuffers(swapchain, shadowColor, shadowDepth, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
 
 	
 	obj1Buffer.resize(MAX_FRAMES_IN_FLIGHT);
@@ -162,18 +162,18 @@ void Application::record(uint32_t imageIndex) {
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = shadowpass.handle;
-	//renderPassInfo.framebuffer = shadowpass.getFramebuffer(0);
-	renderPassInfo.framebuffer = shadowpass.getFramebuffer(imageIndex);
+	renderPassInfo.framebuffer = shadowpass.getFramebuffer(0);
+	//renderPassInfo.framebuffer = shadowpass.getFramebuffer(imageIndex);
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent.width = SHADOW_MAP_WIDTH;
 	renderPassInfo.renderArea.extent.height = SHADOW_MAP_HEIGHT;
 	std::array<VkClearValue, 2> clearValues{};
 	clearValues[0].color = { {1.0f, 1.0f, 1.0f, 1.0f} };
 	clearValues[1].depthStencil = { 1.0f, 0 };
-	renderPassInfo.clearValueCount = 2;
-	renderPassInfo.pClearValues = clearValues.data();
-	//renderPassInfo.clearValueCount = 1;
-	//renderPassInfo.pClearValues = &clearValues[1];
+	//renderPassInfo.clearValueCount = 2;
+	//renderPassInfo.pClearValues = clearValues.data();
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearValues[1];
 	vkCmdBeginRenderPass(cb, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineShadow.handle);
@@ -205,7 +205,7 @@ void Application::record(uint32_t imageIndex) {
 
 	vkCmdEndRenderPass(cb);
 
-	/*VkImageMemoryBarrier barrier{};
+	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.image = shadowmap.image.handle;
 	barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -243,7 +243,7 @@ void Application::record(uint32_t imageIndex) {
 	vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineNoTexture.handle);
 	vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineNoTexture.layout, 0, 1, &descriptorSetFloor[currentFrame], 0, nullptr);
 	vkCmdDrawIndexed(cb, 6, 1, scene.meshes[0].indices.size() - 6, 0, 0);
-	vkCmdEndRenderPass(cb);*/
+	vkCmdEndRenderPass(cb);
 
 	if (vkEndCommandBuffer(cb) != VK_SUCCESS) {
 		throw std::runtime_error("failed to record command buffer!");
