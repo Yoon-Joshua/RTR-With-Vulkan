@@ -37,25 +37,13 @@ void Application::init(GlfwContext* glfwContext_) {
 
 	depthImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-	/*shadowDepth.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT,
-		1, context.msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-	shadowColor.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT,
-		1, context.msaaSamples, swapchain.getFormat(), VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);*/
-
 	shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-	//shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
 	
 	renderpass.create(&context, swapchain.getFormat(), depthFormat, context.msaaSamples);
 	renderpass.createFramebuffers(swapchain, colorImage, depthImage, swapchain.width(), swapchain.height());
 
 	shadowpass.create(&context, VK_FORMAT_D16_UNORM);
 	shadowpass.createFramebuffers(shadowmap.image, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
-	//shadowpass.create(&context, swapchain.getFormat(), depthFormat, context.msaaSamples);
-	//shadowpass.createFramebuffers(swapchain, shadowColor, shadowDepth, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
-
 	
 	obj1Buffer.resize(MAX_FRAMES_IN_FLIGHT);
 	obj2Buffer.resize(MAX_FRAMES_IN_FLIGHT);
@@ -163,15 +151,12 @@ void Application::record(uint32_t imageIndex) {
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = shadowpass.handle;
 	renderPassInfo.framebuffer = shadowpass.getFramebuffer(0);
-	//renderPassInfo.framebuffer = shadowpass.getFramebuffer(imageIndex);
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent.width = SHADOW_MAP_WIDTH;
 	renderPassInfo.renderArea.extent.height = SHADOW_MAP_HEIGHT;
 	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = { {1.0f, 1.0f, 1.0f, 1.0f} };
+	clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
 	clearValues[1].depthStencil = { 1.0f, 0 };
-	//renderPassInfo.clearValueCount = 2;
-	//renderPassInfo.pClearValues = clearValues.data();
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearValues[1];
 	vkCmdBeginRenderPass(cb, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -329,26 +314,34 @@ void Application::resizeWindow() {
 }
 
 void Application::updateUniformObjects(size_t index) {
-	//static auto startTime = std::chrono::steady_clock::now();
-	//auto currentTime = std::chrono::steady_clock::now();
-	//float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-	//lightInfo.pos = glm::rotate(glm::mat4(1.0), time * glm::radians(90.0f), glm::vec3(-0.5, 1.0, 0.0)) * glm::vec4(8.0f, 8.0f, -8.0f, 1.0f);
 	lightInfo.pos = glm::vec3(0.0, 80.0, 80.0);
 	lightInfo.intensity = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	lightInfoBuffer[index].upload(&lightInfo, false);
 
 	camera.setPosition(ArcBall::scroll_factor);
+#ifdef USE_ARCBALL
+	obj1.model = arcball.get() * glm::scale(glm::mat4(1.0f), glm::vec3(20.0f, 20.0f, 20.0f));
+#else
 	obj1.model = glm::scale(glm::mat4(1.0f), glm::vec3(20.0f, 20.0f, 20.0f));
+#endif
 	obj1.view = camera.lookAt();
 	obj1.proj = camera.perspective();
 	obj1Buffer[index].upload(&obj1, false);
 
+#ifdef USE_ARCBALL
+	obj2.model = arcball.get() * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, 0.0f, -40.0f)), glm::vec3(10.0f, 10.0f, 10.0f));
+#else
 	obj2.model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, 0.0f, -40.0f)), glm::vec3(10.0f, 10.0f, 10.0f));
+#endif	
 	obj2.view = camera.lookAt();
 	obj2.proj = camera.perspective();
 	obj2Buffer[index].upload(&obj2, false);
 
+#ifdef USE_ARCBALL
+	floor.model = arcball.get() * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -30.0f)), glm::vec3(4.0f, 4.0f, 4.0f));
+#else
 	floor.model = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -30.0f)), glm::vec3(4.0f, 4.0f, 4.0f));
+#endif
 	floor.view = camera.lookAt();
 	floor.proj = camera.perspective();
 	floorBuffer[index].upload(&floor, false);
@@ -358,7 +351,7 @@ void Application::updateUniformObjects(size_t index) {
 
 	obj1FromLight.model = obj1.model;
 	obj1FromLight.view = glm::lookAt(lightInfo.pos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	obj1FromLight.proj = glm::perspective(glm::radians(120.0f), w/h, 50.0f, 300.0f);
+	obj1FromLight.proj = glm::ortho(-150.0f, 150.0f, -150.0f, 150.0f, 50.0f, 300.0f);
 	obj1FromLight.proj[1][1] *= -1;
 	obj1FromLightBuffer[index].upload(&obj1FromLight, false);
 

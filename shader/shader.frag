@@ -15,22 +15,26 @@ layout(binding = 2, set = 0) uniform LightInfo{
 layout(binding = 0, set = 1) uniform sampler2D texSampler;
 layout(binding = 3, set = 0) uniform sampler2D shadowmapSampler;
 
+float bias = 0.002;
+
 void main(){
 	vec4 color = texture(texSampler, inTexCoord);
 
 	vec3 lightDir = lightInfo.pos - inPosition;
 	lightDir = normalize(lightDir);
 
-	float albedo = 1.0;
-	float ambient = 0.00;
+	float albedo = 0.5;
+	float ambient = 0.1;
 	float cosine = dot(lightDir, normalize(inNormal));
 	if(cosine < 0) {
 		cosine = 0;
 	}
 
-	cosine = pow(cosine, 4);
-
-	vec4 smValue = texture(shadowmapSampler, smCoord.xy);
+	vec4 smc = smCoord / smCoord.w;
+	vec4 smValue = texture(shadowmapSampler, (smc.xy + 1.0) / 2.0);
+	if(smc.z > smValue.x + bias) {
+		albedo = 0.0;
+	}
 
 	outColor = vec4(albedo * cosine * lightInfo.intensity.xyz, 1.0) * color + ambient * color;
 }

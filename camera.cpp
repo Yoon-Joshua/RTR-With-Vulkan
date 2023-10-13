@@ -14,4 +14,4 @@ void Camera::setFovy(float f) { fovy = f; }
 
 void Camera::setAspect(float a) { aspect = a; }
 
-void Camera::setPosition(float p) { eye = p * (1.0f + eye / 1000.0f); }
+void Camera::setPosition(float p) { eye = p * glm::normalize(eye - centre); }

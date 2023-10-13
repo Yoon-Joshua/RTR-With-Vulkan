@@ -17,8 +17,6 @@ public:
 
 	void destroy();
 
-	void record(uint32_t, uint32_t, RenderPass pass, std::vector<Pipeline>&, std::vector<VkDescriptorSet>&, VkExtent2D, Scene&);
-
 	void reset(uint32_t bufferIndex);
 
 	void submit(uint32_t bufferIndex, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore, VkFence fence);

@@ -19,6 +19,8 @@
 #include "arcball.h"
 #include "glfw_context.h"
 
+#define USE_ARCBALL
+
 struct MVP {
 	alignas(16) glm::mat4 model;
 	alignas(16) glm::mat4 view;
