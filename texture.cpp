@@ -21,7 +21,8 @@ void Texture::generateMipmaps() {
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
+	//barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.layerCount = image.layers;
 	barrier.subresourceRange.levelCount = 1;
 
 	int32_t mipWidth = image.width;
@@ -34,23 +35,45 @@ void Texture::generateMipmaps() {
 		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		vkCmdPipelineBarrier(cb.handles[0], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
 			nullptr, 1, &barrier);
-		VkImageBlit blit{};
-		blit.srcOffsets[0] = { 0, 0, 0 };
-		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
-		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		blit.srcSubresource.mipLevel = i - 1;
-		blit.srcSubresource.baseArrayLayer = 0;
-		blit.srcSubresource.layerCount = 1;
-		blit.dstOffsets[0] = { 0, 0, 0 };
-		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1,
-							  mipHeight > 1 ? mipHeight / 2 : 1, 1 };
-		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		blit.dstSubresource.mipLevel = i;
-		blit.dstSubresource.baseArrayLayer = 0;
-		blit.dstSubresource.layerCount = 1;
+
+		// start edit
+		std::vector<VkImageBlit> imageBlits;
+		for (int j = 0; j < image.layers; ++j) {
+			VkImageBlit blit{};
+			blit.srcOffsets[0] = { 0, 0, 0 };
+			blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+			blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			blit.srcSubresource.mipLevel = i - 1;
+			blit.srcSubresource.baseArrayLayer = j;
+			blit.srcSubresource.layerCount = 1;
+			blit.dstOffsets[0] = { 0, 0, 0 };
+			blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1,
+								  mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+			blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			blit.dstSubresource.mipLevel = i;
+			blit.dstSubresource.baseArrayLayer = j;
+			blit.dstSubresource.layerCount = 1;
+			imageBlits.push_back(blit);
+		}
+
+		//VkImageBlit blit{};
+		//blit.srcOffsets[0] = { 0, 0, 0 };
+		//blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+		//blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		//blit.srcSubresource.mipLevel = i - 1;
+		//blit.srcSubresource.baseArrayLayer = 0;
+		//blit.srcSubresource.layerCount = 1;
+		//blit.dstOffsets[0] = { 0, 0, 0 };
+		//blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1,
+		//					  mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		//blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		//blit.dstSubresource.mipLevel = i;
+		//blit.dstSubresource.baseArrayLayer = 0;
+		//blit.dstSubresource.layerCount = 1;
 		vkCmdBlitImage(cb.handles[0], image.handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
+			image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageBlits.size(), imageBlits.data(),
 			VK_FILTER_LINEAR);
+		// end edit
 
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -79,8 +102,6 @@ void Texture::create(Context* context_, uint32_t texWidth, uint32_t texHeight, V
 	VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlagBits aspectFlags) {
 	context = context_;
 
-	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
-
 	image.create(context, texWidth, texHeight, 1, VK_SAMPLE_COUNT_1_BIT, format, tiling,
 		usage, properties, aspectFlags);
 
@@ -103,42 +124,7 @@ void Texture::create(Context* context_, uint32_t texWidth, uint32_t texHeight, V
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerInfo.mipLodBias = 0.0f;
 	samplerInfo.minLod = 0.0f;
-	samplerInfo.maxLod = static_cast<float>(mipLevels);
-	if (vkCreateSampler(context->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create texture sampler!");
-	}
-}
-
-void Texture::create(Context* context_, uint32_t texWidth, uint32_t texHeight) {
-	context = context_;
-
-	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
-
-	//image.create(context, texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-	//	VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-	image.create(context, texWidth, texHeight, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	VkSamplerCreateInfo samplerInfo{};
-	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-	samplerInfo.anisotropyEnable = VK_TRUE;
-
-	VkPhysicalDeviceProperties properties = context->gpuProperties;
-
-	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerInfo.unnormalizedCoordinates = VK_FALSE;
-	samplerInfo.compareEnable = VK_FALSE;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerInfo.mipLodBias = 0.0f;
-	samplerInfo.minLod = 0.0f;
-	samplerInfo.maxLod = static_cast<float>(mipLevels);
+	samplerInfo.maxLod = 1.0f;
 	if (vkCreateSampler(context->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create texture sampler!");
 	}
@@ -168,10 +154,84 @@ void Texture::create(Context* context_, std::string path) {
 	
 	copy(context, image, stagingBuffer,texWidth, texHeight);
 	stagingBuffer.destroy();
-	//image.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	generateMipmaps();
 
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+
+	VkPhysicalDeviceProperties properties = context->gpuProperties;
+
+	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = static_cast<float>(mipLevels);
+	if (vkCreateSampler(context->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create texture sampler!");
+	}
+}
+
+void Texture::create(Context* context_, std::array<const char*, 6> path) {
+	context = context_;
+	std::array<stbi_uc*, 6> pixels;
+	int texWidth, texHeight, texChannels;
+	for (int i = 0; i < 6; ++i) {
+		int width, height, channels;
+		pixels[i] = stbi_load(path[i], &width, &height, &channels, STBI_rgb_alpha);
+		if (!pixels[i]) throw std::runtime_error("failed to load texture image");
+		if (i == 0) {
+			texWidth = width;
+			texHeight = height;
+			texChannels = channels;
+		}
+		else if (width != texWidth || height != texHeight || channels != texChannels) {
+			throw std::runtime_error("images of cube map have different size");
+		}
+	}
+	VkDeviceSize imageSize = texWidth * texHeight * 4;
+	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+
+	Buffer stagingBuffer;
+	stagingBuffer.create(context, imageSize * 6, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void* pData;
+	for (int i = 0; i < 6; ++i) {
+		vkMapMemory(context->device, stagingBuffer.memory, imageSize * i, imageSize, 0, &pData);
+		memcpy(pData, pixels[i], imageSize);
+		vkUnmapMemory(context->device, stagingBuffer.memory);
+	}
+
+	image.create(context, texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
+	image.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	CommandBuffer cb = CommandBuffer::beginSingleTimeCommands(context);
+	std::vector<VkBufferImageCopy> bufferCopyRegions;
+	for (uint32_t face = 0; face < 6; face++) {
+		// Calculate offset into staging buffer for the current face
+		VkBufferImageCopy bufferCopyRegion = {};
+		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		bufferCopyRegion.imageSubresource.mipLevel = 0;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = face;
+		bufferCopyRegion.imageSubresource.layerCount = 1;
+		bufferCopyRegion.imageExtent = { (uint32_t)texWidth,(uint32_t)texHeight,1 };
+		bufferCopyRegion.bufferOffset = imageSize * face;
+		bufferCopyRegions.push_back(bufferCopyRegion);
+	}
+	vkCmdCopyBufferToImage(cb.handles[0], stagingBuffer.handle, image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, bufferCopyRegions.size(), bufferCopyRegions.data());
+	CommandBuffer::endSingleTimeCommands(cb);
+	stagingBuffer.destroy();
+
+	generateMipmaps();
 	VkSamplerCreateInfo samplerInfo{};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_LINEAR;

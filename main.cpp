@@ -1,10 +1,16 @@
-#include "application.h"
+#include "global.h"
+#include <iostream>
 #include "timer.h"
 #include "glfw_context.h"
 
+#ifdef PCSS
+#include "application.h"
+#elif defined PRT
+#include "prt/prt.h"
+#endif
+
 int main() {
 	Timer timer;
-	Application app;
 	GlfwContext wnd;
 	
 	glfwInit();
@@ -16,8 +22,17 @@ int main() {
 	const char** glfwExtensions;
 	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 	wnd.glfwExtensions.assign(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
+#ifdef PCSS
+	Application app;
 	app.init(&wnd);
 	app.mainLoop(timer);
 	app.cleanup();
+#elif defined PRT
+	PRTApplication app;
+	app.init(&wnd);
+	app.prepare();
+	app.mainLoop(timer);
+	app.cleanup();
+#endif
+
 }

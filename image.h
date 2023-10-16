@@ -7,7 +7,9 @@ class Image
 public:
 	void create(Context* context_, uint32_t width, uint32_t height, uint32_t mipLevels,
 		VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling,
-		VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlagBits aspectFlags);
+		VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlagBits aspectFlags,
+		bool isCube = false);
+
 	void destroy();
 
 	void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -22,6 +24,7 @@ public:
 	VkDeviceMemory memory;
 
 	VkFormat format;
+	uint32_t layers{ 1 };
 	uint32_t mipLevels{ 1 };
 	uint32_t width;
 	uint32_t height;

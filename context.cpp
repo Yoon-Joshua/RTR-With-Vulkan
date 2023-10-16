@@ -5,18 +5,11 @@ std::fstream Context::output;
 Context::Context() {
 	output.open("E:/log.txt", std::ios::out);
 
-	//glfwInit();
-
 #ifdef _DEBUG
 	enableValidationLayers = true;
 #endif
 
 	validationLayers.push_back("VK_LAYER_KHRONOS_validation");
-
-	//uint32_t glfwExtensionCount = 0;
-	//const char **glfwExtensions;
-	//glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-	//std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 	if (enableValidationLayers) {
 		instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
@@ -27,10 +20,6 @@ Context::Context() {
 Context::~Context() { output.close(); }
 
 void Context::create(GlfwContext* glfwContext){
-	//glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	//window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-	//glfwSetWindowUserPointer(window, this);
-	//glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 	instanceExtensions.insert(instanceExtensions.end(), glfwContext->glfwExtensions.begin(), glfwContext->glfwExtensions.end());
 	createInstance();
 	setupDebugMessenger();
@@ -58,7 +47,6 @@ VkInstance Context::getInstance()const { return instance; }
 VkPhysicalDevice Context::getPhysicalDevice()const { return gpu; }
 VkDevice Context::getDevice()const { return device; }
 VkSurfaceKHR Context::getSurface()const { return surface; }
-//GLFWwindow* Context::getWindow()const { return window; }
 VkCommandPool Context::getCommandPool()const { return commandPool; }
 
 uint32_t Context::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
@@ -300,11 +288,6 @@ void Context::createCommandPool() {
 		throw std::runtime_error("failed to create command pool!");
 	}
 }
-
-//void Context::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-//	auto app = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
-//	app->framebufferResized = true;
-//}
 
 VkBool32 Context::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,

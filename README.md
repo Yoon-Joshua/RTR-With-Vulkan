@@ -7,7 +7,7 @@
 * Kulla-Conty Approximation
 * Screen Space Global Illumination
 
-目前，第一节PCSS已完成大半。
+目前，第一节PCSS已完成大半，还需完善ArcBall的交互、多光源阴影和动态物体。
 
 ## 依赖
 

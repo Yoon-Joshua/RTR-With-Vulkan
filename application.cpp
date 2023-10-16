@@ -1,7 +1,9 @@
-#include "Application.h"
+#include "application.h"
+#include "global.h"
 #include "common.h"
 #include <chrono>
-std::string TEXTURE_PATH = "E:/model/marry/MC003_Kozakura_Mari.png";
+
+const std::string TEXTURE_PATH = "E:/model/marry/MC003_Kozakura_Mari.png";
 
 void Application::init(GlfwContext* glfwContext_) {
 	glfwContext = glfwContext_;
@@ -253,11 +255,6 @@ void Application::drawFrame() {
 	commandBuffer.reset(currentFrame);
 
 	updateUniformObjects(currentFrame);
-
-	std::vector<RenderPass> passes = { shadowpass,renderpass };
-	std::vector<Pipeline> pipelines = { pipelineShadow, pipeline, pipelineNoTexture };
-	std::vector<VkDescriptorSet> sets = { descriptorSetObj1FromLight[currentFrame], descriptorSetObj1[currentFrame],
-										descriptorSetTexture[currentFrame],descriptorSetObj1[currentFrame] };
 
 	record(imageIndex);
 

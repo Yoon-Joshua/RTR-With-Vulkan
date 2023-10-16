@@ -20,20 +20,27 @@
 #include "glfw_context.h"
 
 struct MVP {
-	alignas(16) glm::mat4 model;
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
+	alignas(16) mat4 model;
+	alignas(16) mat4 view;
+	alignas(16) mat4 proj;
 };
 
 struct LightInfo {
-	alignas(16) glm::vec3 pos;
-	alignas(16) glm::vec3 intensity;
+	alignas(16) vec3 pos;
+	alignas(16) vec3 intensity;
+};
+
+struct LightPRT {
+	alignas(16) mat3 r;
+	alignas(16) mat3 g;
+	alignas(16) mat3 b;
 };
 
 /// @note Swapchain and Surface are necessary.
-class Application {
+class PRTApplication {
 public:
 	void init(GlfwContext* glfwContext_);
+	void prepare();
 	void mainLoop(Timer& timer);
 	void cleanup();
 
@@ -46,31 +53,32 @@ private:
 	void updateUniformObjects(size_t index);
 	/************************************************/
 	void createDescriptorPool();
-
-	void createDescriptorSetLayoutPhong();
-	void createDescriptorSetLayoutTexture();
-	void createDescriptorSetLayoutMVP();
-
-	void createDescriptorSetsPhong();
-	void createDescriptorSetsTexture();
-	void createDescriptorSetsMVP();
+	void createDescriptorSetLayout();
+	void createDescriptorSetLayoutSkyBox();
+	void createDescriptorSet();
+	void createDescriptorSetSkyBox();
 	/************************************************/
 
 	GlfwContext* glfwContext{ nullptr };
 	Context context;
 	Camera camera;
-	ArcBall arcball;
 	Scene scene;
 	SwapChain swapchain;
 	Image depthImage;
 	Image colorImage;
 	Texture texture;
-	Texture shadowmap;
+	Texture skybox;
+	MVP mvp;
+	LightPRT lightPrt;
+	std::vector<Buffer> mvpBuffer;
+	std::vector<Buffer> lightPrtBuffer;
 
 	VkFormat depthFormat;
 	Pipeline pipeline;
-	Pipeline pipelineNoTexture;
-	Pipeline pipelineShadow;
+	Pipeline pipelineSkyBox;
+
+	VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout descriptorSetLayoutSkyBox{ VK_NULL_HANDLE };
 
 	CommandBuffer commandBuffer;
 
@@ -80,44 +88,18 @@ private:
 	uint32_t currentFrame = 0;
 
 	RenderPass renderpass;
-	RenderPass shadowpass;
 	VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
-
-	VkDescriptorSetLayout descriptorSetLayoutPhong;
-	VkDescriptorSetLayout descriptorSetLayoutTexture;
-	VkDescriptorSetLayout descriptorSetLayoutMVP;
-
-	std::vector<VkDescriptorSet> descriptorSetObj1;
-	std::vector<VkDescriptorSet> descriptorSetObj2;
-	std::vector<VkDescriptorSet> descriptorSetFloor;
-	std::vector<VkDescriptorSet> descriptorSetTexture;
-	std::vector<VkDescriptorSet> descriptorSetObj1FromLight;
-	std::vector<VkDescriptorSet> descriptorSetObj2FromLight;
-	std::vector<VkDescriptorSet> descriptorSetFloorFromLight;
-
-	std::vector<Buffer> lightInfoBuffer;
-	std::vector<Buffer> obj1Buffer;
-	std::vector<Buffer> obj2Buffer;
-	std::vector<Buffer> floorBuffer;
-	std::vector<Buffer> obj1FromLightBuffer;
-	std::vector<Buffer> obj2FromLightBuffer;
-	std::vector<Buffer> floorFromLightBuffer;
-	MVP obj1;
-	MVP obj2;
-	MVP floor;
-	MVP obj1FromLight;
-	MVP obj2FromLight;
-	MVP floorFromLight;
-	LightInfo lightInfo;
+	std::vector<VkDescriptorSet> descriptorSet;
+	std::vector<VkDescriptorSet> descriptorSetSkyBox;
 };
 
 /*
 * flight frame
-* 
+*
 * command buffer
 * semaphore
 * fence
 * descriptor set
-* 
+*
 */
 

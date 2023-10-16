@@ -2,7 +2,9 @@
 
 Camera::Camera() :fovy(75), aspect(1), near(0.01), far(10000), up(vec3(0.0, 1.0, 0.0)), eye(vec3(30.0, 30.0, 30.0)), centre(vec3(0.0, 0.0, 0.0)) {}
 
-mat4 Camera::lookAt() { return glm::lookAt(eye, centre, up); }
+mat4 Camera::lookAt() { 
+	return glm::lookAt(eye, centre, up);
+}
 
 mat4 Camera::perspective() { 
 	mat4 mPer = glm::perspective(glm::radians(fovy), aspect, near, far);

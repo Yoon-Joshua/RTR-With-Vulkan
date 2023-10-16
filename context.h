@@ -9,11 +9,6 @@
 #include <vulkan/vulkan.h>
 #include "glfw_context.h"
 
-#define WIDTH 1600
-#define HEIGHT 1200
-
-#define MAX_FRAMES_IN_FLIGHT 2
-
 class Context
 {
 public:
@@ -25,7 +20,6 @@ public:
 	VkPhysicalDevice getPhysicalDevice()const;
 	VkDevice getDevice()const;
 	VkSurfaceKHR getSurface()const;
-	//GLFWwindow* getWindow()const;
 	VkCommandPool getCommandPool()const;
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -37,8 +31,6 @@ private:
 	void pickPhysicalDevice();
 	void createLogicalDevice();
 	void createCommandPool();
-
-	//static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL
 		debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

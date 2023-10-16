@@ -4,7 +4,8 @@
 
 void Image::create(Context* context_, uint32_t width, uint32_t height, uint32_t mipLevels,
 	VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling,
-	VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlagBits aspectFlags) {
+	VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlagBits aspectFlags,
+	bool isCube) {
 
 	context = context_;
 	this->format = format;
@@ -16,6 +17,7 @@ void Image::create(Context* context_, uint32_t width, uint32_t height, uint32_t 
 	this->usage = usage;
 	this->properties = properties;
 	this->aspectFlags = aspectFlags;
+	this->layers = isCube ? 6 : 1;
 
 	// create image
 	VkImageCreateInfo imageInfo{};
@@ -25,13 +27,14 @@ void Image::create(Context* context_, uint32_t width, uint32_t height, uint32_t 
 	imageInfo.extent.height = height;
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = mipLevels;
-	imageInfo.arrayLayers = 1;
+	imageInfo.arrayLayers = this->layers;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = usage;
 	imageInfo.samples = numSamples;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.flags = isCube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 	if (vkCreateImage(context->device, &imageInfo, nullptr, &handle) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create image!");
 	}
@@ -53,13 +56,13 @@ void Image::create(Context* context_, uint32_t width, uint32_t height, uint32_t 
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = handle;
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.viewType = isCube ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspectFlags;
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = 1;
+	viewInfo.subresourceRange.layerCount = layers;
 	if (vkCreateImageView(context->device, &viewInfo, nullptr, &view) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create image view!");
 	}
@@ -85,7 +88,7 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = mipLevels;
 	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.layerCount = this->layers;
 
 	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
