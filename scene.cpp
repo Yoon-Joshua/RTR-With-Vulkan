@@ -4,19 +4,24 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-std::string MODEL_PATH = "E:/games202/Assignment2/prt/scenes/mary.obj";
+#include <assimp/Exporter.hpp>
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+
+std::string MODEL_PATH = "E:/games202/homework3/assets/cube/cube1.gltf";
 
 //const std::string PRECOMPUTED_LIGHT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/Indoor/light.txt";
 //const std::string PRECOMPUTED_TRANSPORT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/Indoor/transport.txt";
 
-//const std::string PRECOMPUTED_LIGHT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/CornellBox/light.txt";
-//const std::string PRECOMPUTED_TRANSPORT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/CornellBox/transport.txt";
+const std::string PRECOMPUTED_LIGHT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/CornellBox/light.txt";
+const std::string PRECOMPUTED_TRANSPORT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/CornellBox/transport.txt";
 
 //const std::string PRECOMPUTED_TRANSPORT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/Skybox/transport.txt";
 //const std::string PRECOMPUTED_LIGHT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/Skybox/light.txt";
 
-const std::string PRECOMPUTED_TRANSPORT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/transport.txt";
-const std::string PRECOMPUTED_LIGHT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/light.txt";
+//const std::string PRECOMPUTED_TRANSPORT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/transport.txt";
+//const std::string PRECOMPUTED_LIGHT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/light.txt";
 
 VkVertexInputBindingDescription Vertex::getBindingDescription() {
 	VkVertexInputBindingDescription bindingDescription{};
@@ -146,10 +151,82 @@ void Scene::loadModel(Context* context) {
 	indexBuffer.upload(meshes[0].indices.data(), true);
 }
 
+void Scene::loadGLFT(Context* context) {
+	// Create an instance of the Importer class
+	Assimp::Importer importer;
+
+	// And have it read the given file with some example postprocessing
+	// Usually - if speed is not the most important aspect for you - you'll
+	// probably to request more postprocessing than we do in this example.
+	const aiScene* scene = importer.ReadFile(MODEL_PATH, aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);;
+
+	float ymin = FLT_MAX;
+
+	meshes.resize(scene->mNumMeshes);
+	unsigned numVerticesAll = 0;
+	unsigned numIndicesAll = 0;
+	for (unsigned i = 0; i < scene->mNumMeshes; ++i) {
+		unsigned numVertices = scene->mMeshes[i]->mNumVertices;
+		numVerticesAll += numVertices;
+		for (unsigned j = 0; j < numVertices; ++j) {
+			Vertex v;
+			v.pos.x = scene->mMeshes[i]->mVertices[j].x;
+			v.pos.y = scene->mMeshes[i]->mVertices[j].y;
+			v.pos.z = scene->mMeshes[i]->mVertices[j].z;
+			v.normal.x = scene->mMeshes[i]->mNormals[j].x;
+			v.normal.y = scene->mMeshes[i]->mNormals[j].y;
+			v.normal.z = scene->mMeshes[i]->mNormals[j].z;
+			v.texCoord.x = scene->mMeshes[i]->mTextureCoords[0][j].x;
+			v.texCoord.y = scene->mMeshes[i]->mTextureCoords[0][j].y;
+			if (i == 1) v.pos *= 2.0f;
+			meshes[i].vertices.push_back(v);
+			if (v.pos.y < ymin) ymin = v.pos.y;
+		}
+
+		unsigned numFaces = scene->mMeshes[i]->mNumFaces;
+		numIndicesAll += numFaces * 3;
+		for (unsigned j = 0; j < numFaces; ++j) {
+			meshes[i].indices.push_back(scene->mMeshes[i]->mFaces[j].mIndices[0]);
+			meshes[i].indices.push_back(scene->mMeshes[i]->mFaces[j].mIndices[1]);
+			meshes[i].indices.push_back(scene->mMeshes[i]->mFaces[j].mIndices[2]);
+		}
+	}
+	
+	Buffer stagingBuffer;
+	stagingBuffer.create(context, numVerticesAll * sizeof(Vertex), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void* pData;
+	VkDeviceSize offset = 0;
+	for (int i = 0; i < meshes.size(); ++i) {
+		VkDeviceSize size = meshes[i].vertices.size() * sizeof(Vertex);
+		vkMapMemory(context->device, stagingBuffer.memory, offset, size, 0, &pData);
+		memcpy(pData, meshes[i].vertices.data(), size);
+		vkUnmapMemory(context->device, stagingBuffer.memory);
+		meshes[i].vertexOffset = offset / sizeof(Vertex);
+		offset += size;
+	}
+	vertexBuffer.create(context, offset, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	stagingBuffer.copyTo(&vertexBuffer, offset);
+	stagingBuffer.destroy();
+
+	stagingBuffer.create(context, numIndicesAll * sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	offset = 0;
+	for (int i = 0; i < meshes.size(); ++i) {
+		VkDeviceSize size = meshes[i].indices.size() * sizeof(uint32_t);
+		vkMapMemory(context->device, stagingBuffer.memory, offset, size, 0, &pData);
+		memcpy(pData, meshes[i].indices.data(), size);
+		vkUnmapMemory(context->device, stagingBuffer.memory);
+		meshes[i].indexOffset = offset / sizeof(uint32_t);
+		offset += size;
+	}
+	indexBuffer.create(context, offset, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	stagingBuffer.copyTo(&indexBuffer, offset);
+	stagingBuffer.destroy();
+}
+
 void Scene::cleanup() {
 	meshes.resize(0);
-	vertexBuffer.destroy();
-	indexBuffer.destroy();
+	if (vertexBuffer.handle != VK_NULL_HANDLE) vertexBuffer.destroy();
+	if (indexBuffer.handle != VK_NULL_HANDLE) indexBuffer.destroy();
 }
 
 void Scene::loadModelPRT(Context* context) {
@@ -246,9 +323,13 @@ void Scene::loadPrecomputedData(std::string lightPath, std::string transportPath
 	lightCoef.resize(numChannels);
 	std::fstream input(lightPath, std::ios::in);
 	for (int i = 0; i < numChannels; ++i) {
-		input >> lightCoef[i][0][0] >> lightCoef[i][0][1] >> lightCoef[i][0][2]
-			>> lightCoef[i][1][0] >> lightCoef[i][1][1] >> lightCoef[i][1][2]
-			>> lightCoef[i][2][0] >> lightCoef[i][2][1] >> lightCoef[i][2][2];
+		//input >> lightCoef[i][0][0] >> lightCoef[i][0][1] >> lightCoef[i][0][2]
+		//	>> lightCoef[i][1][0] >> lightCoef[i][1][1] >> lightCoef[i][1][2]
+		//	>> lightCoef[i][2][0] >> lightCoef[i][2][1] >> lightCoef[i][2][2];
+
+		input >> lightCoef[i][0][0] >> lightCoef[i][1][0] >> lightCoef[i][2][0]
+			>> lightCoef[i][0][1] >> lightCoef[i][1][1] >> lightCoef[i][2][1]
+			>> lightCoef[i][0][2] >> lightCoef[i][1][2] >> lightCoef[i][2][2];
 	}
 	input.close();
 
@@ -256,9 +337,13 @@ void Scene::loadPrecomputedData(std::string lightPath, std::string transportPath
 	transportCoef.resize(meshes[0].verticesPRT.size());
 	for (int i = 0; i < meshes[0].indices.size(); ++i) {
 		uint32_t index = meshes[0].indices[i];
-		input >> transportCoef[index][0][0] >> transportCoef[index][0][1] >> transportCoef[index][0][2]
-			>> transportCoef[index][1][0] >> transportCoef[index][1][1] >> transportCoef[index][1][2]
-			>> transportCoef[index][2][0] >> transportCoef[index][2][1] >> transportCoef[index][2][2];
+		//input >> transportCoef[index][0][0] >> transportCoef[index][0][1] >> transportCoef[index][0][2]
+		//	>> transportCoef[index][1][0] >> transportCoef[index][1][1] >> transportCoef[index][1][2]
+		//	>> transportCoef[index][2][0] >> transportCoef[index][2][1] >> transportCoef[index][2][2];
+
+		input >> transportCoef[index][0][0] >> transportCoef[index][1][0] >> transportCoef[index][2][0]
+			>> transportCoef[index][0][1] >> transportCoef[index][1][1] >> transportCoef[index][2][1]
+			>> transportCoef[index][0][2] >> transportCoef[index][1][2] >> transportCoef[index][2][2];
 	}
 	input.close();
 }

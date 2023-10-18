@@ -4,14 +4,14 @@
 
 const std::string TEXTURE_PATH_ = "E:/model/marry/MC003_Kozakura_Mari.png";
 
-//std::array<const char*, 6> CUBE_MAP_PATH = {
-//	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/posx.jpg",	// left
-//	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/negx.jpg",	// right
-//	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/posy.jpg",	// top
-//	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/negy.jpg",	// bottom
-//	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/posz.jpg",	// front
-//	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/negz.jpg",	// back
-//};
+std::array<const char*, 6> CUBE_MAP_PATH = {
+	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/posx.jpg",	// left
+	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/negx.jpg",	// right
+	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/posy.jpg",	// top
+	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/negy.jpg",	// bottom
+	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/posz.jpg",	// front
+	"E:/games202/Assignment2/prt/scenes/cubemap/Indoor/negz.jpg",	// back
+};
 
 //std::array<const char*, 6> CUBE_MAP_PATH = {
 //	"E:/games202/Assignment2/prt/scenes/cubemap/CornellBox/posx.jpg",	// left
@@ -31,14 +31,14 @@ const std::string TEXTURE_PATH_ = "E:/model/marry/MC003_Kozakura_Mari.png";
 //	"E:/games202/Assignment2/prt/scenes/cubemap/Skybox/negz.jpg",	// back
 //};
 
-std::array<const char*, 6> CUBE_MAP_PATH = {
-	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/posx.jpg",	// left
-	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/negx.jpg",	// right
-	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/posy.jpg",	// top
-	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/negy.jpg",	// bottom
-	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/posz.jpg",	// front
-	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/negz.jpg",	// back
-};
+//std::array<const char*, 6> CUBE_MAP_PATH = {
+//	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/posx.jpg",	// left
+//	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/negx.jpg",	// right
+//	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/posy.jpg",	// top
+//	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/negy.jpg",	// bottom
+//	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/posz.jpg",	// front
+//	"E:/games202/Assignment2/prt/scenes/cubemap/GraceCathedral/negz.jpg",	// back
+//};
 
 void PRTApplication::init(GlfwContext* glfwContext_) {
 	glfwContext = glfwContext_;
@@ -91,7 +91,6 @@ void PRTApplication::prepare() {
 		mvpBuffer[i].create(&context, sizeof(MVP), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		lightPrtBuffer[i].create(&context, sizeof(LightPRT), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	}
-	texture.create(&context, TEXTURE_PATH_.c_str());
 	skybox.create(&context, CUBE_MAP_PATH);
 
 	createDescriptorPool();
@@ -128,7 +127,6 @@ void PRTApplication::cleanup() {
 	renderpass.destroyFramebuffers();
 	colorImage.destroy();
 	depthImage.destroy();
-	texture.destroy();
 	skybox.destroy();
 	renderpass.destroy();
 	swapchain.destroy();
@@ -309,22 +307,17 @@ void PRTApplication::createDescriptorPool() {
 }
 
 void PRTApplication::createDescriptorSetLayout() {
-	std::array<VkDescriptorSetLayoutBinding, 3> bindings;
+	std::array<VkDescriptorSetLayoutBinding, 2> bindings;
 	bindings[0].binding = 0;
 	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	bindings[0].descriptorCount = 1;
 	bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	bindings[0].pImmutableSamplers = nullptr;  // Optional
 	bindings[1].binding = 1;
-	bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	bindings[1].descriptorCount = 1;
-	bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	bindings[1].pImmutableSamplers = nullptr;  // Optional
-	bindings[2].binding = 2;
-	bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	bindings[2].descriptorCount = 1;
-	bindings[2].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-	bindings[2].pImmutableSamplers = nullptr;  // Optional
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -376,17 +369,12 @@ void PRTApplication::createDescriptorSet() {
 		bufferInfo.offset = 0;
 		bufferInfo.range = sizeof(MVP);
 
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = texture.image.view;
-		imageInfo.sampler = texture.sampler;
-
 		VkDescriptorBufferInfo lightPrtInfo{};
 		lightPrtInfo.buffer = lightPrtBuffer[i].handle;
 		lightPrtInfo.offset = 0;
 		lightPrtInfo.range = sizeof(LightPRT);
 
-		std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+		std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet = descriptorSet[i];
 		descriptorWrites[0].dstBinding = 0;
@@ -398,16 +386,9 @@ void PRTApplication::createDescriptorSet() {
 		descriptorWrites[1].dstSet = descriptorSet[i];
 		descriptorWrites[1].dstBinding = 1;
 		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &imageInfo;
-		descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[2].dstSet = descriptorSet[i];
-		descriptorWrites[2].dstBinding = 2;
-		descriptorWrites[2].dstArrayElement = 0;
-		descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[2].descriptorCount = 1;
-		descriptorWrites[2].pBufferInfo = &lightPrtInfo;
+		descriptorWrites[1].pBufferInfo = &lightPrtInfo;
 
 		vkUpdateDescriptorSets(context.device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}

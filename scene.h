@@ -12,6 +12,8 @@
 #include "buffer.h"
 #include "global.h"
 
+#include <assimp/Importer.hpp>
+
 using vec3 = glm::vec3;
 using vec2 = glm::vec2;
 using mat3 = glm::mat3;
@@ -91,15 +93,24 @@ struct Mesh {
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 	std::vector<VertexPRT> verticesPRT;
+
+	VkDeviceSize vertexOffset;
+	VkDeviceSize indexOffset;
+};
+
+struct Material {
+	vec3 albedo;
+	vec3 ambient;
 };
 
 class Scene {
 public:
 	void loadModel(Context* context);
+	void loadGLFT(Context* context);
 	void cleanup();
 
-	Buffer vertexBuffer;
-	Buffer indexBuffer;
+	Buffer vertexBuffer{ VK_NULL_HANDLE };
+	Buffer indexBuffer{ VK_NULL_HANDLE };
 
 	std::vector<Mesh> meshes;
 

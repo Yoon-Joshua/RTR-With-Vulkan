@@ -1,12 +1,10 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
 #include <vector>
 #include <array>
 #include <memory>
-#include "context.h"
-#include "swapchain.h"
+#include "applicationbase.h"
 #include "image.h"
 #include "common.h"
 #include "command_buffer.h"
@@ -14,34 +12,13 @@
 #include "scene.h"
 #include "pipeline.h"
 #include "texture.h"
-#include "timer.h"
-#include "camera.h"
 #include "arcball.h"
-#include "glfw_context.h"
-
-struct MVP {
-	alignas(16) mat4 model;
-	alignas(16) mat4 view;
-	alignas(16) mat4 proj;
-};
-
-struct LightInfo {
-	alignas(16) vec3 pos;
-	alignas(16) vec3 intensity;
-};
-
-struct LightPRT {
-	alignas(16) mat3 r;
-	alignas(16) mat3 g;
-	alignas(16) mat3 b;
-};
 
 /// @note Swapchain and Surface are necessary.
-class PRTApplication {
+class GIApplication :public Application {
 public:
-	void init(GlfwContext* glfwContext_);
+	GIApplication(GlfwContext* glfwContext_):Application(glfwContext_) {}
 	void prepare();
-	void mainLoop(Timer& timer);
 	void cleanup();
 
 private:
@@ -54,51 +31,45 @@ private:
 	/************************************************/
 	void createDescriptorPool();
 	void createDescriptorSetLayout();
-	void createDescriptorSetLayoutSkyBox();
+	void createDescriptorSetLayoutNoTexture();
+	void createDescriptorSetLayoutShadow();
 	void createDescriptorSet();
-	void createDescriptorSetSkyBox();
+	void createDescriptorSetNoTexture();
+	void createDescriptorSetShadow();
 	/************************************************/
-
-	GlfwContext* glfwContext{ nullptr };
-	Context context;
-	Camera camera;
 	Scene scene;
-	SwapChain swapchain;
 	Image depthImage;
 	Image colorImage;
-	Texture skybox;
-	MVP mvp;
-	LightPRT lightPrt;
-	std::vector<Buffer> mvpBuffer;
-	std::vector<Buffer> lightPrtBuffer;
+	Texture texture;
+	Texture shadowMap;
+	Texture normalMap;
+	Texture worldPosMap;
 
-	VkFormat depthFormat;
+	MVP mvp;
+	std::vector<Buffer> mvpBuffer;
+	MVP mvpLight;
+	std::vector<Buffer> mvpLightBuffer;
+	Light light;
+	std::vector<Buffer> lightBuffer;
+
 	Pipeline pipeline;
-	Pipeline pipelineSkyBox;
+	Pipeline pipelineNoTexture;
+	Pipeline pipelineShadow;
 
 	VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
-	VkDescriptorSetLayout descriptorSetLayoutSkyBox{ VK_NULL_HANDLE };
-
-	CommandBuffer commandBuffer;
+	VkDescriptorSetLayout descriptorSetLayoutNoTexture{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout descriptorSetLayoutShadow{ VK_NULL_HANDLE };
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
 	uint32_t currentFrame = 0;
 
+	RenderPass gbufferpass;
+	RenderPass shadowpass;
 	RenderPass renderpass;
 	VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
 	std::vector<VkDescriptorSet> descriptorSet;
-	std::vector<VkDescriptorSet> descriptorSetSkyBox;
+	std::vector<VkDescriptorSet> descriptorSetNoTexture;
+	std::vector<VkDescriptorSet> descriptorSetShadow;
 };
-
-/*
-* flight frame
-*
-* command buffer
-* semaphore
-* fence
-* descriptor set
-*
-*/
-

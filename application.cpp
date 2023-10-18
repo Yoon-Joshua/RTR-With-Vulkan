@@ -5,7 +5,7 @@
 
 const std::string TEXTURE_PATH = "E:/model/marry/MC003_Kozakura_Mari.png";
 
-void Application::init(GlfwContext* glfwContext_) {
+void PCSSApplication::init(GlfwContext* glfwContext_) {
 	glfwContext = glfwContext_;
 	context.create(glfwContext);
 	arcball.init(glfwContext->window);
@@ -86,7 +86,7 @@ void Application::init(GlfwContext* glfwContext_) {
 	scene.loadModel(&context);
 }
 
-void Application::mainLoop(Timer& timer) {
+void PCSSApplication::mainLoop(Timer& timer) {
 	commandBuffer.create(&context, MAX_FRAMES_IN_FLIGHT);
 
 	timer.reset();
@@ -101,7 +101,7 @@ void Application::mainLoop(Timer& timer) {
 	commandBuffer.destroy();
 }
 
-void Application::cleanup() {
+void PCSSApplication::cleanup() {
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		vkDestroySemaphore(context.getDevice(), imageAvailableSemaphores[i], nullptr);
 		vkDestroySemaphore(context.getDevice(), renderFinishedSemaphores[i], nullptr);
@@ -137,7 +137,7 @@ void Application::cleanup() {
 	context.destroy();
 }
 
-void Application::record(uint32_t imageIndex) {
+void PCSSApplication::record(uint32_t imageIndex) {
 
 	VkCommandBuffer& cb = commandBuffer.handles[currentFrame];
 
@@ -237,7 +237,7 @@ void Application::record(uint32_t imageIndex) {
 	}
 }
 
-void Application::drawFrame() {
+void PCSSApplication::drawFrame() {
 	vkWaitForFences(context.getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
 	uint32_t imageIndex;
@@ -272,7 +272,7 @@ void Application::drawFrame() {
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Application::createSyncObjects() {
+void PCSSApplication::createSyncObjects() {
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -293,7 +293,7 @@ void Application::createSyncObjects() {
 	}
 }
 
-void Application::resizeWindow() {
+void PCSSApplication::resizeWindow() {
 	int width = 0, height = 0;
 	while (width == 0 || height == 0) {
 		glfwGetFramebufferSize(glfwContext->window, &width, &height);
@@ -310,7 +310,7 @@ void Application::resizeWindow() {
 	renderpass.createFramebuffers(swapchain, colorImage, depthImage, w, h);
 }
 
-void Application::updateUniformObjects(size_t index) {
+void PCSSApplication::updateUniformObjects(size_t index) {
 	lightInfo.pos = glm::vec3(0.0, 80.0, 80.0);
 	lightInfo.intensity = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	lightInfoBuffer[index].upload(&lightInfo, false);
@@ -363,7 +363,7 @@ void Application::updateUniformObjects(size_t index) {
 	floorFromLightBuffer[index].upload(&floorFromLight, false);
 }
 
-void Application::createDescriptorPool() {
+void PCSSApplication::createDescriptorPool() {
 	std::array<VkDescriptorPoolSize, 2> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = static_cast<uint32_t>(12 * MAX_FRAMES_IN_FLIGHT);
@@ -381,7 +381,7 @@ void Application::createDescriptorPool() {
 	}
 }
 
-void Application::createDescriptorSetLayoutPhong() {
+void PCSSApplication::createDescriptorSetLayoutPhong() {
 	std::array<VkDescriptorSetLayoutBinding, 4> bindings;
 	bindings[0].binding = 0;
 	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -416,7 +416,7 @@ void Application::createDescriptorSetLayoutPhong() {
 	}
 }
 
-void Application::createDescriptorSetLayoutTexture() {
+void PCSSApplication::createDescriptorSetLayoutTexture() {
 	std::array<VkDescriptorSetLayoutBinding, 1> bindings;
 	bindings[0].binding = 0;
 	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -433,7 +433,7 @@ void Application::createDescriptorSetLayoutTexture() {
 	}
 }
 
-void Application::createDescriptorSetLayoutMVP() {
+void PCSSApplication::createDescriptorSetLayoutMVP() {
 	std::array<VkDescriptorSetLayoutBinding, 1> bindings;
 	bindings[0].binding = 0;
 	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -450,7 +450,7 @@ void Application::createDescriptorSetLayoutMVP() {
 	}
 }
 
-void Application::createDescriptorSetsPhong() {
+void PCSSApplication::createDescriptorSetsPhong() {
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayoutPhong);
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -539,7 +539,7 @@ void Application::createDescriptorSetsPhong() {
 	}
 }
 
-void Application::createDescriptorSetsTexture() {
+void PCSSApplication::createDescriptorSetsTexture() {
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayoutTexture);
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -570,7 +570,7 @@ void Application::createDescriptorSetsTexture() {
 	}
 }
 
-void Application::createDescriptorSetsMVP() {
+void PCSSApplication::createDescriptorSetsMVP() {
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayoutMVP);
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

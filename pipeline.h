@@ -23,6 +23,8 @@ public:
 
 	void createPipelineSkyBox(Context* context_, std::vector<VkDescriptorSetLayout>& setLayouts, RenderPass& pass);
 
+	void createPipelineGBuffer(Context* context_, std::vector<VkDescriptorSetLayout>& setLayouts, RenderPass& pass);
+
 	void destroy();
 private:
 	VkShaderModule createShaderModule(const std::vector<char>& code);

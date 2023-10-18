@@ -1,8 +1,6 @@
 #pragma once
 
-#include <string>
-
-#define PRT
+#define GI
 
 #define USE_ARCBALL
 

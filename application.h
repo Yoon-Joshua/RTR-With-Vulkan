@@ -31,7 +31,7 @@ struct LightInfo {
 };
 
 /// @note Swapchain and Surface are necessary.
-class Application {
+class PCSSApplication {
 public:
 	void init(GlfwContext* glfwContext_);
 	void mainLoop(Timer& timer);

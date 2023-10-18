@@ -7,6 +7,8 @@
 #include "application.h"
 #elif defined PRT
 #include "prt/prt.h"
+#elif defined GI
+#include  "gi/gi.h"
 #endif
 
 int main() {
@@ -33,6 +35,11 @@ int main() {
 	app.prepare();
 	app.mainLoop(timer);
 	app.cleanup();
+#elif defined GI
+	std::unique_ptr<Application> app = std::make_unique<GIApplication>(&wnd);
+	app->prepare();
+	app->mainLoop(timer);
+	app->cleanup();
 #endif
-
+	
 }
