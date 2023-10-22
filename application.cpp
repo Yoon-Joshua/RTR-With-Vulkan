@@ -39,7 +39,7 @@ void PCSSApplication::init(GlfwContext* glfwContext_) {
 
 	depthImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-	shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+	shadowmap.create(&context, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 	
 	renderpass.create(&context, swapchain.getFormat(), depthFormat, context.msaaSamples);
 	renderpass.createFramebuffers(swapchain, colorImage, depthImage, swapchain.width(), swapchain.height());
@@ -485,7 +485,7 @@ void PCSSApplication::createDescriptorSetsPhong() {
 
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.sampler = shadowmap.sampler;
-		imageInfo.imageView = shadowmap.image.view;
+		imageInfo.imageView = shadowmap.image.readView;
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
@@ -555,7 +555,7 @@ void PCSSApplication::createDescriptorSetsTexture() {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		std::array<VkDescriptorImageInfo,1> imageInfo{};
 		imageInfo[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo[0].imageView = texture.image.view;
+		imageInfo[0].imageView = texture.image.readView;
 		imageInfo[0].sampler = texture.sampler;
 
 		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};

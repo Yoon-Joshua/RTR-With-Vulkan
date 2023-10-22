@@ -63,13 +63,19 @@ void Image::create(Context* context_, uint32_t width, uint32_t height, uint32_t 
 	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = layers;
-	if (vkCreateImageView(context->device, &viewInfo, nullptr, &view) != VK_SUCCESS) {
+	if (vkCreateImageView(context->device, &viewInfo, nullptr, &readView) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create image view!");
+	}
+
+	viewInfo.subresourceRange.levelCount = 1;
+	if (vkCreateImageView(context->device, &viewInfo, nullptr, &writeView) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create image view!");
 	}
 }
 
 void Image::destroy() {
-	vkDestroyImageView(context->device, view, nullptr);
+	vkDestroyImageView(context->device, readView, nullptr);
+	vkDestroyImageView(context->device, writeView, nullptr);
 	vkDestroyImage(context->device, handle, nullptr);
 	vkFreeMemory(context->device, memory, nullptr);
 }
@@ -90,18 +96,19 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = this->layers;
 
-	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-		if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) {
-			barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-		}
-	}
-	else {
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	}
+	//if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+	//	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	//	if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) {
+	//		barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+	//	}
+	//}
+	//else {
+	//	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	//}
 
 	VkPipelineStageFlags sourceStage;
 	VkPipelineStageFlags destinationStage;
+	barrier.subresourceRange.aspectMask = this->aspectFlags;
 
 	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
 		newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {

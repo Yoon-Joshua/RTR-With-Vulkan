@@ -26,13 +26,14 @@ public:
 	void destroy();
 
 	void createFramebuffers(SwapChain& swapchain, Image& color, Image& depth, uint32_t width, uint32_t height);
+	
 	void createFramebuffers(Image& depth, uint32_t width, uint32_t height);
 
 	// \brief create framebuffers of G-Buffer
-	void createFramebuffers(SwapChain& swapchain,Image& worldPos, Image& normal, Image& depth, uint32_t width, uint32_t height);
+	void createFramebuffers(Image& color,Image& worldPos, Image& normal, Image& depth, uint32_t width, uint32_t height);
+	
+	void debug(SwapChain& color,Image& worldPos, Image& normal, Image& depth, uint32_t width, uint32_t height);
 
-	// deprecated
-	void createFramebuffers(Image& resolvedColor, Image& color, Image& depth, uint32_t width, uint32_t height);
 	void destroyFramebuffers();
 
 	VkFramebuffer getFramebuffer(uint32_t index);

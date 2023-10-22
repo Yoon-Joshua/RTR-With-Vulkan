@@ -20,30 +20,29 @@ public:
 	GIApplication(GlfwContext* glfwContext_):Application(glfwContext_) {}
 	void prepare();
 	void cleanup();
-
 private:
 	void record(uint32_t imageIndex);
 	void drawFrame();
 	void createSyncObjects();
 	void resizeWindow();
-
 	void updateUniformObjects(size_t index);
-	/************************************************/
+
 	void createDescriptorPool();
 	void createDescriptorSetLayout();
-	void createDescriptorSetLayoutNoTexture();
-	void createDescriptorSetLayoutShadow();
 	void createDescriptorSet();
-	void createDescriptorSetNoTexture();
-	void createDescriptorSetShadow();
-	/************************************************/
+	void writeDescriptorSet();
+
 	Scene scene;
 	Image depthImage;
 	Image colorImage;
 	Texture texture;
+
+	// G-Buffers
 	Texture shadowMap;
 	Texture normalMap;
 	Texture worldPosMap;
+	Texture depthMap;
+	Texture colorMap;
 
 	MVP mvp;
 	std::vector<Buffer> mvpBuffer;
@@ -55,10 +54,12 @@ private:
 	Pipeline pipeline;
 	Pipeline pipelineNoTexture;
 	Pipeline pipelineShadow;
+	Pipeline pipelineSSR;
 
-	VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
-	VkDescriptorSetLayout descriptorSetLayoutNoTexture{ VK_NULL_HANDLE };
-	VkDescriptorSetLayout descriptorSetLayoutShadow{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout transformSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout lightSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout materialSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout gBufferSetLayout{ VK_NULL_HANDLE };
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -69,7 +70,9 @@ private:
 	RenderPass shadowpass;
 	RenderPass renderpass;
 	VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
-	std::vector<VkDescriptorSet> descriptorSet;
-	std::vector<VkDescriptorSet> descriptorSetNoTexture;
-	std::vector<VkDescriptorSet> descriptorSetShadow;
+
+	std::vector<VkDescriptorSet> transformSet;
+	std::vector<VkDescriptorSet> lightSet;
+	std::vector<VkDescriptorSet> materialSet;
+	std::vector<VkDescriptorSet> gBufferSet;
 };

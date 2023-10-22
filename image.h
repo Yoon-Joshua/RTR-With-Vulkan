@@ -20,7 +20,8 @@ public:
 	
 	Context* context;
 	VkImage handle{ VK_NULL_HANDLE };
-	VkImageView view{ VK_NULL_HANDLE };
+	VkImageView readView{ VK_NULL_HANDLE };
+	VkImageView writeView{ VK_NULL_HANDLE };
 	VkDeviceMemory memory;
 
 	VkFormat format;

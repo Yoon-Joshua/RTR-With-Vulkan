@@ -133,18 +133,18 @@ void RenderPass::create(Context* context_, VkFormat colorFormat, VkFormat depthF
 		e.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		e.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		e.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		e.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		e.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = depthFormat;
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	std::array<VkAttachmentReference, 3> colorAttachmentRef{};
 	for (int i = 0; i < colorAttachmentRef.size(); ++i) {
@@ -194,7 +194,7 @@ void RenderPass::createFramebuffers(SwapChain& swapchain, Image& color, Image& d
 	uint32_t num = swapchain.getNumImages();
 	framebuffers.resize(num);
 	for (uint32_t i = 0; i < num; ++i) {
-		std::array<VkImageView, 3> attachments = { color.view, depth.view ,swapchain.getView(i) };
+		std::array<VkImageView, 3> attachments = { color.readView, depth.readView ,swapchain.getView(i) };
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -215,7 +215,7 @@ void RenderPass::createFramebuffers(Image& depth, uint32_t width, uint32_t heigh
 	uint32_t num = 1;
 	framebuffers.resize(num);
 	for (uint32_t i = 0; i < num; ++i) {
-		std::array<VkImageView, 1> attachments = { depth.view };
+		std::array<VkImageView, 1> attachments = { depth.readView };
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -232,32 +232,33 @@ void RenderPass::createFramebuffers(Image& depth, uint32_t width, uint32_t heigh
 	}
 }
 
-void RenderPass::createFramebuffers(SwapChain& swapchain, Image& worldPos, Image& normal, Image& depth, uint32_t width, uint32_t height) {
-	uint32_t num = swapchain.getNumImages();
-	framebuffers.resize(num);
-	for (uint32_t i = 0; i < num; ++i) {
-		std::array<VkImageView, 4> attachments = { swapchain.getView(i),worldPos.view, normal.view, depth.view };
-
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = handle;
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = width;
-		framebufferInfo.height = height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(context->device, &framebufferInfo, nullptr, &framebuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-	}
-}
-
-void RenderPass::createFramebuffers(Image& resolvedColor, Image& color, Image& depth, uint32_t width, uint32_t height) {
+void RenderPass::createFramebuffers(Image& color, Image& worldPos, Image& normal, Image& depth, uint32_t width, uint32_t height) {
 	uint32_t num = 1;
 	framebuffers.resize(num);
 	for (uint32_t i = 0; i < num; ++i) {
-		std::array<VkImageView, 3> attachments = { color.view, depth.view ,resolvedColor.view };
+		//std::array<VkImageView, 4> attachments = { color.readView, worldPos.readView, normal.readView, depth.readView };
+		std::array<VkImageView, 4> attachments = { color.writeView, worldPos.writeView, normal.writeView, depth.writeView };
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = handle;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachments.data();
+		framebufferInfo.width = width;
+		framebufferInfo.height = height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(context->device, &framebufferInfo, nullptr, &framebuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+	}
+}
+
+void RenderPass::debug(SwapChain& swapchain, Image& worldPos, Image& normal, Image& depth, uint32_t width, uint32_t height) {
+	uint32_t num = swapchain.getNumImages();
+	framebuffers.resize(num);
+	for (uint32_t i = 0; i < num; ++i) {
+		std::array<VkImageView, 4> attachments = { swapchain.getView(i), worldPos.writeView, normal.writeView, depth.writeView};
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

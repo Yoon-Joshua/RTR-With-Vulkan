@@ -39,9 +39,9 @@ void main(){
 	vec2 smUV = ((smCoord / smCoord.w + 1.0) / 2.0).xy;
 	float smDepth = (texture(shadowSampler, smUV)).r;
 	if(smDepth + 0.005 < z){
-		outColor = vec4(ambient * light.intensity, 1.0) * texture(texSampler, uv);
+		//outColor = vec4(ambient * light.intensity, 1.0) * texture(texSampler, uv);
 	}
 	else{
-		outColor = vec4((ambient + cos1 * albedo + cos2 * specular) * light.intensity, 1.0) * texture(texSampler, uv);
+		//outColor = vec4((ambient + cos1 * albedo + cos2 * specular) * light.intensity, 1.0) * texture(texSampler, uv);
 	}
 }

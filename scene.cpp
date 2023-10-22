@@ -9,7 +9,8 @@
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
 
-std::string MODEL_PATH = "E:/games202/homework3/assets/cube/cube1.gltf";
+//std::string MODEL_PATH = "E:/games202/homework3/assets/cube/cube2.gltf";
+std::string MODEL_PATH = "E:/games202/homework3/assets/cave/cave.gltf";
 
 //const std::string PRECOMPUTED_LIGHT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/Indoor/light.txt";
 //const std::string PRECOMPUTED_TRANSPORT_PATH = "E:/games202/Assignment2/prt/scenes/cubemap/Indoor/transport.txt";
@@ -158,7 +159,7 @@ void Scene::loadGLFT(Context* context) {
 	// And have it read the given file with some example postprocessing
 	// Usually - if speed is not the most important aspect for you - you'll
 	// probably to request more postprocessing than we do in this example.
-	const aiScene* scene = importer.ReadFile(MODEL_PATH, aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);;
+	const aiScene* scene = importer.ReadFile(MODEL_PATH, aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
 
 	float ymin = FLT_MAX;
 
@@ -178,7 +179,7 @@ void Scene::loadGLFT(Context* context) {
 			v.normal.z = scene->mMeshes[i]->mNormals[j].z;
 			v.texCoord.x = scene->mMeshes[i]->mTextureCoords[0][j].x;
 			v.texCoord.y = scene->mMeshes[i]->mTextureCoords[0][j].y;
-			if (i == 1) v.pos *= 2.0f;
+			
 			meshes[i].vertices.push_back(v);
 			if (v.pos.y < ymin) ymin = v.pos.y;
 		}

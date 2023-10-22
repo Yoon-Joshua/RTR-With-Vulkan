@@ -410,7 +410,7 @@ void PRTApplication::createDescriptorSetSkyBox() {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = skybox.image.view;
+		imageInfo.imageView = skybox.image.readView;
 		imageInfo.sampler = skybox.sampler;
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = mvpBuffer[i].handle;

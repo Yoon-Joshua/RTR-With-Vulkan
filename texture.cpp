@@ -19,7 +19,7 @@ void Texture::generateMipmaps() {
 	barrier.image = image.handle;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.aspectMask = this->image.aspectFlags;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	//barrier.subresourceRange.layerCount = 1;
 	barrier.subresourceRange.layerCount = image.layers;
@@ -38,18 +38,18 @@ void Texture::generateMipmaps() {
 
 		// start edit
 		std::vector<VkImageBlit> imageBlits;
-		for (int j = 0; j < image.layers; ++j) {
+		for (unsigned j = 0; j < image.layers; ++j) {
 			VkImageBlit blit{};
 			blit.srcOffsets[0] = { 0, 0, 0 };
 			blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
-			blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			blit.srcSubresource.aspectMask = this->image.aspectFlags;
 			blit.srcSubresource.mipLevel = i - 1;
 			blit.srcSubresource.baseArrayLayer = j;
 			blit.srcSubresource.layerCount = 1;
 			blit.dstOffsets[0] = { 0, 0, 0 };
 			blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1,
 								  mipHeight > 1 ? mipHeight / 2 : 1, 1 };
-			blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			blit.dstSubresource.aspectMask = this->image.aspectFlags;
 			blit.dstSubresource.mipLevel = i;
 			blit.dstSubresource.baseArrayLayer = j;
 			blit.dstSubresource.layerCount = 1;
@@ -71,7 +71,7 @@ void Texture::generateMipmaps() {
 		//blit.dstSubresource.baseArrayLayer = 0;
 		//blit.dstSubresource.layerCount = 1;
 		vkCmdBlitImage(cb.handles[0], image.handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageBlits.size(), imageBlits.data(),
+			image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(imageBlits.size()), imageBlits.data(),
 			VK_FILTER_LINEAR);
 		// end edit
 
@@ -98,12 +98,14 @@ void Texture::generateMipmaps() {
 	CommandBuffer::endSingleTimeCommands(cb);
 }
 
-void Texture::create(Context* context_, uint32_t texWidth, uint32_t texHeight, VkFormat format, VkImageTiling tiling,
-	VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlagBits aspectFlags) {
+void Texture::create(Context* context_, uint32_t texWidth, uint32_t texHeight, VkFormat format,
+	VkImageUsageFlags usage, VkImageAspectFlagBits aspectFlags, bool depthMipmap) {
 	context = context_;
 
-	image.create(context, texWidth, texHeight, 1, VK_SAMPLE_COUNT_1_BIT, format, tiling,
-		usage, properties, aspectFlags);
+	uint32_t mipLevels = depthMipmap ? static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1 : 1;
+
+	image.create(context, texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, format, VK_IMAGE_TILING_OPTIMAL,
+		usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, aspectFlags);
 
 	VkSamplerCreateInfo samplerInfo{};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -212,7 +214,7 @@ void Texture::create(Context* context_, std::array<const char*, 6> path) {
 	}
 
 	image.create(context, texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, true);
 	image.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	CommandBuffer cb = CommandBuffer::beginSingleTimeCommands(context);
 	std::vector<VkBufferImageCopy> bufferCopyRegions;
@@ -227,7 +229,7 @@ void Texture::create(Context* context_, std::array<const char*, 6> path) {
 		bufferCopyRegion.bufferOffset = imageSize * face;
 		bufferCopyRegions.push_back(bufferCopyRegion);
 	}
-	vkCmdCopyBufferToImage(cb.handles[0], stagingBuffer.handle, image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, bufferCopyRegions.size(), bufferCopyRegions.data());
+	vkCmdCopyBufferToImage(cb.handles[0], stagingBuffer.handle, image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(bufferCopyRegions.size()), bufferCopyRegions.data());
 	CommandBuffer::endSingleTimeCommands(cb);
 	stagingBuffer.destroy();
 
