@@ -1,14 +1,18 @@
-#pragma once
-
-#define GI
-
-#define USE_ARCBALL
+#ifndef GLOBAL_H
+#define GLOBAL_H
 
 #define WIDTH 1600
 #define HEIGHT 1200
 
 #define SHADOW_MAP_WIDTH 1600
-#define SHADOW_MAP_HEIGHT 1600
+#define SHADOW_MAP_HEIGHT 1200
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
+#define _DEBUG
+
+#define API_VERSION VK_API_VERSION_1_2
+
+#define RESOLUTION 1024
+
+#endif

@@ -1,9 +1,7 @@
-# Visual Studio
-
-*.vcxproj
-*.filters
-*.user
-*.TMP
+*.o
+/.vscode
+*.exe
+*.dll
 x64/
 
 # SPIRV
