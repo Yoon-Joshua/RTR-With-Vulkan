@@ -1,6 +1,6 @@
 # Real-Time Rendering Demo with Vulkan
 
-任务有
+## Features
 
 * Percentage Closer Soft Shadow
 * Precomputed Radiance Transfer
@@ -8,11 +8,11 @@
 * Screen Space Global Illumination
 * Ray Tracing and Denoising
 
-目前已完成前4个的基本任务。第5个任务需要具备硬件光追功能的显卡，其渲染流程和一般的 Vulkan 的光栅化渲染流程不太一样，待日后完善。
+## Todo
 
 现在，程序还缺少交互功能，需要开发具有轨迹球或者弧形球功能的Camera类。
 
-## 演示
+## Examples
 
 ![](img/pcss.png)
 
@@ -22,7 +22,7 @@
 
 ![](img/kully-conty.png)
 
-## 依赖
+## Requirements
 
 * GLM
 * GLFW3

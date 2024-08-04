@@ -142,10 +142,12 @@ void Scene::loadGLFT(std::string path) {
   const aiScene* scene = importer.ReadFile(
       path, aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
 
-  for (unsigned i = 0; i < scene->mNumMeshes; ++i) {
+  for (int i = scene->mNumMeshes - 1; i >= 0; --i) {
     Mesh m;
+
     m.type = COMMON;
     unsigned numVertices = scene->mMeshes[i]->mNumVertices;
+
     for (unsigned j = 0; j < numVertices; ++j) {
       Vertex v;
       v.pos.x = scene->mMeshes[i]->mVertices[j].x;

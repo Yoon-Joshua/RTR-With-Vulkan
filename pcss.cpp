@@ -11,7 +11,7 @@ shadow map的pass需要一个vp矩阵和各个物体的model矩阵
 第二个pass需要各个物体的model矩阵、相机的vp矩阵、光源的vp矩阵、物体的贴图
 */
 
-const std::string TEXTURE_PATH = "E:/model/marry/MC003_Kozakura_Mari.png";
+const std::string TEXTURE_PATH = "asset/viking_room/viking_room.png";
 
 PCSSApplication::PCSSApplication(GlfwContext* glfwCnt) : Application(glfwCnt) {}
 
@@ -61,7 +61,7 @@ void PCSSApplication::prepare() {
   pipelineShadow.createShadowPipeline(&context, layouts, shadowpass);
 
   scene.loadObj("asset/plane/plane.obj");
-  scene.loadObj("asset/marry/Marry.obj");
+  scene.loadObj("asset/viking_room/viking_room.obj");
   scene.createGeometryBuffer(&context);
   createRenderItems();
 
@@ -274,7 +274,7 @@ void PCSSApplication::update() {
   lightInfo.intensity = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
   frameResource[currentFrame].light.upload(&lightInfo, false);
 
-  cameraParam.eye = glm::vec3(80.0f);
+  cameraParam.eye = glm::vec3(80.0f,80.f,0);
   cameraParam.view = glm::lookAt(cameraParam.eye, glm::vec3(0.0f),
                                  glm::vec3(0.0f, 1.0f, 0.0f));
   cameraParam.proj = glm::perspective(glm::radians(60.f), w / h, 0.1f, 1000.0f);
@@ -637,8 +637,9 @@ void PCSSApplication::createRenderItems() {
   renderItem[1].model.upload(&m, false);
 
   // small marry
+  // 滚一边去
   m = glm::scale(
-      glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, 0.0f, -40.0f)),
+      glm::translate(glm::mat4(1.0f), glm::vec3(400.0f, 0.0f, -400.0f)),
       glm::vec3(10.0f, 10.0f, 10.0f));
   renderItem[2].indexCount = scene.meshes[1].indices.size();
   renderItem[2].indexOffset = scene.meshes[1].indexOffset;

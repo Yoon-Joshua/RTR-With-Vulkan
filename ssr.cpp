@@ -1,6 +1,6 @@
 #include "ssr.h"
 
-const std::string TEXTURE_PATH = "asset/cube/checker.png";
+const std::string TEXTURE_PATH = "asset/R.jpg";
 
 SsrApplication::SsrApplication(GlfwContext *glfwContext)
     : Application(glfwContext) {}
@@ -94,6 +94,7 @@ void SsrApplication::prepare() {
   createDescriptorPool();
 
   scene.loadGLFT("asset/cube/cube2.gltf");
+
   scene.createGeometryBuffer(&context);
 
   createRenderItem();
@@ -326,7 +327,7 @@ void SsrApplication::resizeWindow() {
 }
 
 void SsrApplication::update() {
-  glm::vec3 eye = {-5.f, 2.0f, 5.f};
+  glm::vec3 eye = {-5.f, 2.0f, -5.f};
   glm::vec3 target = {0.0f, 0.0f, 0.0f};
   cameraParam.view = glm::lookAt(eye, target, glm::vec3(0.f, 1.f, 0.f));
   cameraParam.proj = glm::perspective(

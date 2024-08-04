@@ -3,6 +3,7 @@
 *.exe
 *.dll
 x64/
+build/
 
 # SPIRV
 **.spv
