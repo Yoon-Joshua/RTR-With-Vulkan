@@ -1,4 +1,4 @@
-# Real-Time Rendering Demo with Vulkan
+# Real-Time Rendering with Vulkan
 
 ## Features
 
